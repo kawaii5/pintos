@@ -7,7 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-#include "lib/kernel/list.c"
+#include "lib/kernel/list.h"
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -87,7 +87,7 @@ timer_elapsed (int64_t then)
 
 static struct list wait_list;
 
-list_init(&wait_list); //initialize wait_list
+//list_init(&wait_list); //initialize wait_list
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
@@ -95,11 +95,11 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-
+  //struct thread *t = thread_current();
   ASSERT (intr_get_level () == INTR_ON);
-  ASSERT (is_thread(t));
-  list_push_back (&wait_list, &t->elem);
-  t->status = THREAD_BLOCK;
+  //ASSERT (is_thread(t));
+  thread_block();
+  //list_push_back (&wait_list, &t->elem);
   //while (timer_elapsed (start) < ticks) 
     //thread_yield ();
 }
@@ -173,7 +173,7 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
