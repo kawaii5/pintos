@@ -10,6 +10,7 @@
 
 Palak Parwal  <pparw001@ucr.edu>
 Michelle Wang  <mwang016@ucr.edu>
+
 ---- PRELIMINARIES ----
 
 >> If you have any preliminary comments on your submission, notes for the
@@ -28,26 +29,42 @@ Michelle Wang  <mwang016@ucr.edu>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+static struct list block_list //in src/threads.h
+  This stores the blocked threads to avoid busy waiting.
+struct thread *t = thread_current(); //in src/threads.h
+  Stores the current thread so that we can change the state of the thread.
+
+
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
+Thread gets blocked until the time has advanced by at least x timer ticks. The tick value is calculated. The timer interrupt handler will update the waiting list of threads, unblocking the threads that are ready to wake.
+
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
+
+Since the list of threads is ordered, the handler does not need to go through the entire list to find the threads to wake. It will only look at one more thread than the number it wakes.
 
 ---- SYNCHRONIZATION ----
 
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
+Interrupts are turned off while ticks are calculated, while threads are added to block_list, and when the status of the thread changes to block. 
+
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
+
+Ready and block lists are being read and modified which means that the ticks are not being updated which should avoid race conditions.
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+Since we weren't sure how to begin this portion, we talked to the TA to go over the process. We chose to use a method in which the waiting list was ordered since the unordered list would make it more difficult on the handler. We had to design a way in which to block and unblock the threads without yield.
 
              PRIORITY SCHEDULING
              ===================
@@ -58,20 +75,41 @@ Michelle Wang  <mwang016@ucr.edu>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+We have not implemented this portion yet, so none of the data structures have been declared yet.
+
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
 >> .png file.)
+
+The data struture we plan to use will be a donor list of some sort from which we will choose the donor with the highest priority level.
+
+For example:
+
+Threads: A, B, C, D
+Locks: E, F, G
+
+E locks A to C //both A and B go to the donor list of C
+F locks C to D //C goes to the donor list of D
+G locks B to C
+
+C will be given the max priority between itself and the possibilities on it's donor list. The same will occur for D.
 
 ---- ALGORITHMS ----
 
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
 
+The waiting threads will be ordered by highest priority and reordered each time one is removed, meaning the lock/semaphore will recieve the highest priority thread first.
+
 >> B4: Describe the sequence of events when a call to lock_acquire()
 >> causes a priority donation.  How is nested donation handled?
 
+If a priority donation is required, the current thread will become a possible donor. Once the current thread is locked, if the lock has a lower priority, the higher one will be given to it, to update it's priority.
+
 >> B5: Describe the sequence of events when lock_release() is called
 >> on a lock that a higher-priority thread is waiting for.
+
+Since the donated priority leaves with the lock, the current thread's priority will be added to the ordered list accordingly. The highest priority thread will take the lock.
 
 ---- SYNCHRONIZATION ----
 
@@ -79,10 +117,14 @@ Michelle Wang  <mwang016@ucr.edu>
 >> how your implementation avoids it.  Can you use a lock to avoid
 >> this race?
 
+A race condition could occur during the priority change in a priority donation. The interrupt handler can also be writing to the priority at the same time. If this occurs, the writes would be in a race. A lock cannot be used for this because not all of the functions involved will have access to the lock.
+
 ---- RATIONALE ----
 
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+We have not completed this design past thoughts. The thoughts were based off of the details discussed in lab that made us think we would need to look into these afore mentioned conditions.
 
               ADVANCED SCHEDULER
               ==================
