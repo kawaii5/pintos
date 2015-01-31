@@ -25,7 +25,7 @@
 static struct list ready_list;
 
 /* List of process in THREAD_BLOCK state, that is, process
-   that are waiting to be run. */
+   that are waiting to be run. ADDED*/
 static struct list block_list;
 
 /* List of all processes.  Processes are added to this list
@@ -217,6 +217,13 @@ thread_create (const char *name, int priority,
   return tid;
 }
 
+//added
+bool
+wakecompare(struct thread first, struct thread second, void *aux=NULL)
+{
+  return &first.wake_tick <= &second.wake_tick;
+}
+
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().
 
@@ -224,15 +231,17 @@ thread_create (const char *name, int priority,
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
 void
-thread_block (void) 
+thread_block () 
 {
   struct thread *t = thread_current();
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
-  list_push_back(&block_list, &t->elem);
+  //------added------
+  //adds the thread onto the block_list
+  list_insert_ordered(&block_list, &t->elem, &wakecompare, NULL);
   t->status = THREAD_BLOCKED;
   schedule ();
-}
+} 
 
 /* Transitions a blocked thread T to the ready-to-run state.
    This is an error if T is not blocked.  (Use thread_yield() to
@@ -256,15 +265,21 @@ thread_unblock (struct thread *t)
   intr_set_level (old_level);
 }
 
+//-----added------
 void
-which_thread_ready(int64_t ticks)
+thread_ready(int64_t ticks)
 {
-  size_t thread_size = block_list.list_size();
-  for(size_t i = 0; i < thread_size; ++i)
+  struct thread* i = list_begin(&block_list);
+  for(; !(is_tail(i)); i=i->next)
   {
-    if(ticks = )
+    if(ticks >= i->wake_tick)
     {
-      
+      thread_unblock(&i);
+      list_remove(i);
+    }
+    else
+    {
+      break;
     }
   }
 }

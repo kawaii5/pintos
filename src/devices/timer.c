@@ -95,11 +95,11 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-  //struct thread *t = thread_current();
   ASSERT (intr_get_level () == INTR_ON);
-  //ASSERT (is_thread(t));
+  //--------added----------
+  thread_current()->wake_tick = start + ticks;
   thread_block();
-  //list_push_back (&wait_list, &t->elem);
+  //start + ticks = when to wake
   //while (timer_elapsed (start) < ticks) 
     //thread_yield ();
 }
@@ -179,6 +179,7 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  thread_ready(ticks); //added: updates block_list, ready_list
   thread_tick ();
 }
 
