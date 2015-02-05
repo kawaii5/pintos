@@ -81,13 +81,25 @@ typedef int tid_t;
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
 struct thread
-  {
-    /* Owned by thread.c. */
+{ 
+    //-------ADDED-----------------
+    //used to check when the thread will wake
+    int64_t wakeuptime;
+    //used for the thread's initial priority
+    int priority_initial;
+    //used to lock the thread
+    struct lock *sleepy_lock;
+    //list of donors that go to the thread
+    struct list donors;
+    //used to place the threads correctly in the donors list
+    struct list_elem donor_elem;
+    //-----------END ADDED------------
+
+   /* Owned by thread.c. */
     tid_t tid;                          /* Thread identifier. */
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
-    int64_t wake_tick;                  //added
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
 
@@ -101,12 +113,21 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
-  };
+};
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+
+//------ADDED---------
+bool sleep_comparator(const struct list_elem*, const struct list_elem*, void *aux);
+bool priority_comparator (const struct list_elem*, const struct list_elem*, void *aux);
+void priority_check (void);
+void priority_donor (void);
+void donor_unlock (struct lock *lock);
+void update_priority (void);
+//-----END ADDED--------
 
 void thread_init (void);
 void thread_start (void);
@@ -117,17 +138,15 @@ void thread_print_stats (void);
 typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
-//bool compare(list_elem*, list_elem*); //added
-void thread_block (void); //<---edited
-void thread_unblock (struct thread *);
-void thread_ready(int64_t); //<---added
+void thread_block (void); //Changed
+void thread_unblock (struct thread *); //Changed
 
 struct thread *thread_current (void);
 tid_t thread_tid (void);
 const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
-void thread_yield (void);
+void thread_yield (void); //Changed
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
